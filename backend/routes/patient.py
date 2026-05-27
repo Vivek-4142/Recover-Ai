@@ -1,6 +1,6 @@
 from datetime import date
 
-from fastapi import APIRouter
+from fastapi import APIRouter # type: ignore
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
