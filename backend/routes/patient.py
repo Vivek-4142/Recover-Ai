@@ -37,3 +37,9 @@ def create_patient(patient: PatientCreate):
         "message": "Patient created successfully",
         "patient_id": new_patient.id
     }
+
+@router.get("/patients")
+def get_patients():
+    db: Session = SessionLocal()
+    patients = db.query(Patient).all()
+    return patients
