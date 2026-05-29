@@ -1,0 +1,26 @@
+pain_level,symptoms,medication_taken,energy_level,recovery_score
+9,"severe pain fever fatigue",0,1,15
+8,"fever body pain weakness",0,1,20
+8,"headache nausea dizziness",1,1,25
+7,"joint pain fatigue",1,1,30
+7,"mild fever cough",1,2,35
+6,"pain and weakness",1,2,40
+6,"headache mild pain",1,2,45
+5,"recovering but tired",1,2,50
+5,"slight pain improving",1,2,55
+4,"feeling better mild pain",1,3,60
+4,"reduced pain more energy",1,3,65
+3,"recovering well",1,3,70
+3,"good energy low pain",1,3,75
+2,"minimal pain active",1,3,80
+2,"healthy appetite energetic",1,3,85
+1,"fully recovering",1,3,90
+1,"no symptoms energetic",1,3,95
+9,"high fever severe weakness",0,1,10
+8,"infection symptoms fatigue",0,1,18
+7,"moderate pain dizziness",1,2,38
+6,"cough and body pain",1,2,48
+5,"sleep improving stable",1,2,58
+4,"walking comfortably",1,3,68
+3,"good recovery progress",1,3,78
+2,"normal activity resumed",1,3,88

@@ -147,7 +147,7 @@ function CheckIn() {
                 : "bg-red-500/10 border-red-500/30 text-red-400"
             }`}
           >
-            <Icons.Alert className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <Icons.Alert className="w-5 h-5  flex-shrink-0 mt-0.5" />
             <span>{feedback.message}</span>
           </div>
         )}
