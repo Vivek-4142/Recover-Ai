@@ -13,7 +13,7 @@ function Dashboard() {
   const [isTyping, setIsTyping] = useState(false);
   const chatEndRef = useRef(null);
 
-  // Baseline clinical profiles containing complete details and SVG chart values
+
   const baselinePatients = [
     {
       id: 101,
@@ -101,34 +101,97 @@ function Dashboard() {
       setLoading(true);
       try {
         const response = await api.get("/patients");
-        // Map API records with dynamic values
-        const apiPatients = response.data.map((p) => {
-          const pain = Math.random() > 0.5 ? 2.5 : 4.2;
-          const score = Math.floor(Math.random() * 20) + 75;
-          const risk = score > 85 ? "Normal" : score > 70 ? "Elevated" : "High Alert";
-          return {
-            id: p.id,
-            name: p.name,
-            age: p.age,
-            condition: p.condition,
-            recovery_start_date: p.recovery_start_date,
-            assigned_doctor: p.assigned_doctor,
-            vitals: {
-              pain: pain,
-              adherence: Math.floor(Math.random() * 15) + 85,
-              logsSubmitted: Math.floor(Math.random() * 2) + 5,
-              score: score
-            },
-            painChart: [7, 6, 5, 4, 3, 3, 2.5],
-            recoveryChart: [15, 30, 45, 58, 68, 74, score],
-            riskAlert: risk,
-            aiInsight: `Clinical telemetry verified for ${p.name}. Recovery score stands stable at ${score}/100. Symptoms present baseline trends under Dr. ${p.assigned_doctor}. Log frequency is healthy.`,
-            logHistory: [
-              { day: "Today", pain: 2, symptoms: "Steady improvement", med: true, energy: "Medium" },
-              { day: "Yesterday", pain: 3, symptoms: "Mild pain", med: true, energy: "Medium" }
-            ]
-          };
-        });
+        // Map API records with dynamic values and actual backend ML predictions
+        const apiPatients = await Promise.all(
+          response.data.map(async (p) => {
+            let pLogs = [];
+            try {
+              const logsRes = await api.get(`/checkins/${p.id}`);
+              pLogs = logsRes.data;
+            } catch (err) {
+              console.error(`Failed to fetch checkins for patient ${p.id}`, err);
+            }
+
+            const logsCount = pLogs.length;
+            const avgPain = logsCount > 0
+              ? Number((pLogs.reduce((sum, l) => sum + Number(l.pain_level), 0) / logsCount).toFixed(1))
+              : 3.5;
+            const medCount = pLogs.filter((l) => l.medication_taken).length;
+            const adherence = logsCount > 0 ? Math.round((medCount / logsCount) * 100) : 100;
+
+            let score = 75; // Default fallback
+            let risk = "Normal";
+
+            if (logsCount > 0) {
+              const latest = pLogs[pLogs.length - 1];
+              try {
+                const predRes = await api.post("/predict-recovery", {
+                  pain_level: Number(latest.pain_level),
+                  symptoms: latest.symptoms || "None",
+                  medication_taken: Boolean(latest.medication_taken),
+                  energy_level: latest.energy_level || "Medium"
+                });
+                score = Math.round(predRes.data.recovery_score);
+                const backendRisk = predRes.data.risk;
+                if (backendRisk === "LOW") risk = "Normal";
+                else if (backendRisk === "MEDIUM") risk = "Elevated";
+                else if (backendRisk === "HIGH") risk = "High Alert";
+              } catch (predErr) {
+                console.error("ML Prediction request failed, using fallback formula", predErr);
+                score = Math.min(95, 60 + (logsCount * 6));
+                risk = score > 85 ? "Normal" : score > 70 ? "Elevated" : "High Alert";
+              }
+            }
+
+            const logHistory = pLogs.map((pl, idx) => ({
+              day: idx === pLogs.length - 1 ? "Today" : `${pLogs.length - 1 - idx} days ago`,
+              pain: pl.pain_level,
+              symptoms: pl.symptoms || "None",
+              med: pl.medication_taken,
+              energy: pl.energy_level || "Medium"
+            })).reverse().slice(0, 5);
+
+            let painCurve = [7, 6, 6, 5, 4, 3, Number(avgPain)];
+            let recoveryCurve = [20, 32, 45, 52, 60, 68, score];
+
+            if (logsCount > 0) {
+              painCurve = Array.from({ length: 7 }, (_, i) => {
+                const idx = pLogs.length - 7 + i;
+                return idx >= 0 ? pLogs[idx].pain_level : Math.max(2, 7 - Math.floor(i / 1.5));
+              });
+              recoveryCurve = Array.from({ length: 7 }, (_, i) => {
+                const idx = pLogs.length - 7 + i;
+                return idx >= 0
+                  ? Math.min(100, score - (pLogs.length - 1 - idx) * 4)
+                  : Math.min(100, Math.max(20, score - (6 - i) * 6));
+              });
+            }
+
+            return {
+              id: p.id,
+              name: p.name,
+              age: p.age,
+              condition: p.condition,
+              recovery_start_date: p.recovery_start_date,
+              assigned_doctor: p.assigned_doctor,
+              vitals: {
+                pain: avgPain,
+                adherence: adherence,
+                logsSubmitted: logsCount,
+                score: score
+              },
+              painChart: painCurve,
+              recoveryChart: recoveryCurve,
+              riskAlert: risk,
+              aiInsight: logsCount > 0
+                ? `ML model diagnostic verification completed. Predicted recovery progression velocity is currently ${score}/100. The risk status is remote classified as [${risk.toUpperCase()}]. Adherence rate: ${adherence}%.`
+                : `No active check-in logs found for ${p.name} (Case ID: ${p.id}). Please submit a Daily Recovery Check-in under this patient's ID to unlock real-time machine learning risk scores and bio-telemetry analytics.`,
+              logHistory: logHistory.length > 0 ? logHistory : [
+                { day: "No Logs", pain: 0, symptoms: "No active logs recorded. Launch a check-in log.", med: false, energy: "N/A" }
+              ]
+            };
+          })
+        );
 
         const merged = [...apiPatients, ...baselinePatients];
         setPatients(merged);
@@ -267,10 +330,10 @@ function Dashboard() {
         replyText = `${p.name}'s current medication adherence index is ${p.vitals.adherence}%. Strict adherence is critical, as any disruption in doses can trigger pain spikes. Ensure the assigned specialist, ${p.assigned_doctor}, is briefed if doses are missed.`;
       } else if (query.includes("alert") || query.includes("risk")) {
         replyText = `Risk Status for ${p.name} is calculated as [${p.riskAlert.toUpperCase()}]. ${p.riskAlert === "High Alert"
-            ? "WARNING: Vitals show elevated soreness and high pain indexes. Physical metrics flag swelling. Immediate practitioner briefing recommended."
-            : p.riskAlert === "Elevated"
-              ? "ATTENTION: Minor compliance drops and muscle spasms logged. Advise strict rest and gentle physiotherapy alignment sets."
-              : "STATUS HEALTHY: Normal vitals logged. Patient is progressing safely on their recovery schedule."
+          ? "WARNING: Vitals show elevated soreness and high pain indexes. Physical metrics flag swelling. Immediate practitioner briefing recommended."
+          : p.riskAlert === "Elevated"
+            ? "ATTENTION: Minor compliance drops and muscle spasms logged. Advise strict rest and gentle physiotherapy alignment sets."
+            : "STATUS HEALTHY: Normal vitals logged. Patient is progressing safely on their recovery schedule."
           }`;
       } else if (query.includes("doctor") || query.includes("specialist")) {
         replyText = `${p.name} is currently supervised by clinical specialist ${p.assigned_doctor}. You can schedule updates directly to their department through this dashboard portal.`;
@@ -767,8 +830,8 @@ function Dashboard() {
 
                     <div className="flex flex-col">
                       <div className={`p-3 rounded-2xl text-xs font-semibold leading-relaxed ${isAi
-                          ? "bg-white/5 border border-border-main/50 text-text-main rounded-tl-none"
-                          : "bg-accent-primary text-bg-main rounded-tr-none font-bold"
+                        ? "bg-white/5 border border-border-main/50 text-text-main rounded-tl-none"
+                        : "bg-accent-primary text-bg-main rounded-tr-none font-bold"
                         }`}>
                         {m.text}
                       </div>

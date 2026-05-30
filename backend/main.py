@@ -5,6 +5,7 @@ from database.init_db import init_db
 
 from routes.patient import router as patient_router
 from routes.checkin import router as checkin_router
+from routes.preditcion import router as predict_router
 
 app = FastAPI()
 
@@ -20,6 +21,7 @@ app.add_middleware(
 
 app.include_router(patient_router)
 app.include_router(checkin_router)
+app.include_router(predict_router)
 
 @app.get("/")
 def home():
