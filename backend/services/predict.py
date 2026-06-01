@@ -18,7 +18,7 @@ def predict_recovery(
     medication_taken: bool,
     energy_level: str
 ):
-    # Map energy level strings ("Low", "Medium", "High") or numeric strings to integers
+
     energy_map = {
         "low": 1,
         "medium": 2,

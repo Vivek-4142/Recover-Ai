@@ -30,6 +30,7 @@ def create_checkin(checkin: CheckInCreate):
     db.add(new_checkin)
     db.commit()
     db.refresh(new_checkin)
+    db.close()
 
     return {
         "message": "Check-in created successfully",
@@ -40,5 +41,6 @@ def create_checkin(checkin: CheckInCreate):
 def get_checkins(patient_id: int):      
     db: Session = SessionLocal()
     checkins = db.query(CheckIn).filter(CheckIn.patient_id == patient_id).all()
+    db.close()
 
     return checkins
