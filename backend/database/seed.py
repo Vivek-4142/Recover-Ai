@@ -1,3 +1,4 @@
+from datetime import time
 from database.database import SessionLocal
 from database.models import Doctor, Patient, CheckIn
 
@@ -38,7 +39,9 @@ def seed_db():
         condition="Post-op Knee Ligament Rehab",
         recovery_start_date="2026-05-12",
         assigned_doctor=dr_jenkins.name,
-        doctor_id=dr_jenkins.id
+        doctor_id=dr_jenkins.id,
+        medication_time=time(9, 0),
+        checkin_deadline=time(21, 0)
     )
 
     samantha = Patient(
@@ -49,7 +52,9 @@ def seed_db():
         condition="Spine Fusion Recovery",
         recovery_start_date="2026-04-25",
         assigned_doctor=dr_jenkins.name,
-        doctor_id=dr_jenkins.id
+        doctor_id=dr_jenkins.id,
+        medication_time=time(9, 0),
+        checkin_deadline=time(21, 0)
     )
 
     aaron = Patient(
@@ -60,7 +65,9 @@ def seed_db():
         condition="Hip Replacement Rehab",
         recovery_start_date="2026-05-01",
         assigned_doctor=dr_brooks.name,
-        doctor_id=dr_brooks.id
+        doctor_id=dr_brooks.id,
+        medication_time=time(9, 0),
+        checkin_deadline=time(21, 0)
     )
 
     elena = Patient(
@@ -71,7 +78,9 @@ def seed_db():
         condition="ACL Reconstruction",
         recovery_start_date="2026-05-18",
         assigned_doctor=dr_brooks.name,
-        doctor_id=dr_brooks.id
+        doctor_id=dr_brooks.id,
+        medication_time=time(9, 0),
+        checkin_deadline=time(21, 0)
     )
 
     db.add(vivek)

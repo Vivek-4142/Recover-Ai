@@ -8,11 +8,19 @@ from routes.patient import router as patient_router
 from routes.checkin import router as checkin_router
 from routes.preditcion import router as predict_router
 from routes.auth import router as auth_router
+from services.scheduler import (
+    scheduler
+)
 
 app = FastAPI()
 
 init_db()
 seed_db()
+
+@app.on_event("startup")
+async def startup():
+
+    scheduler.start()
 
 app.add_middleware(
     CORSMiddleware,
