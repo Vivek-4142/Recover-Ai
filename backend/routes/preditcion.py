@@ -1,6 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from services.predict import predict_recovery
+from services.auth_service import get_current_user
 
 router = APIRouter()
 
@@ -13,7 +14,7 @@ class PredictionRequest(BaseModel):
 
 
 @router.post("/predict-recovery")
-def predict(data: PredictionRequest):
+def predict(data: PredictionRequest, current_user: dict = Depends(get_current_user)):
 
     score = predict_recovery(
         pain_level=data.pain_level,

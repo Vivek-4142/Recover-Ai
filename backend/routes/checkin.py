@@ -1,11 +1,12 @@
 from datetime import date
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database.database import SessionLocal
 from database.models import CheckIn
+from services.auth_service import get_current_user
 
 router = APIRouter()
 class CheckInCreate(BaseModel):
@@ -16,7 +17,7 @@ class CheckInCreate(BaseModel):
     energy_level: str
 
 @router.post("/checkins")
-def create_checkin(checkin: CheckInCreate):
+def create_checkin(checkin: CheckInCreate, current_user: dict = Depends(get_current_user)):
     db: Session = SessionLocal()
 
     new_checkin = CheckIn(
@@ -38,7 +39,7 @@ def create_checkin(checkin: CheckInCreate):
     }
 
 @router.get("/checkins/{patient_id}")
-def get_checkins(patient_id: int):      
+def get_checkins(patient_id: int, current_user: dict = Depends(get_current_user)):      
     db: Session = SessionLocal()
     checkins = db.query(CheckIn).filter(CheckIn.patient_id == patient_id).all()
     db.close()

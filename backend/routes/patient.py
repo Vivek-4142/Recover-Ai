@@ -1,11 +1,12 @@
 from datetime import date
 from typing import Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database.database import SessionLocal
 from database.models import Patient
+from services.auth_service import get_current_user
 
 router = APIRouter()
 
@@ -18,7 +19,7 @@ class PatientCreate(BaseModel):
     doctor_id: Optional[int] = None
 
 @router.post("/patients")
-def create_patient(patient: PatientCreate):
+def create_patient(patient: PatientCreate, current_user: dict = Depends(get_current_user)):
     db: Session = SessionLocal()
 
     new_patient = Patient(
@@ -41,7 +42,7 @@ def create_patient(patient: PatientCreate):
     }
 
 @router.get("/patients")
-def get_patients(doctor_id: Optional[int] = None):
+def get_patients(doctor_id: Optional[int] = None, current_user: dict = Depends(get_current_user)):
     db: Session = SessionLocal()
     if doctor_id:
         patients = db.query(Patient).filter(Patient.doctor_id == doctor_id).all()
@@ -51,7 +52,7 @@ def get_patients(doctor_id: Optional[int] = None):
     return patients
 
 @router.get("/patients/{id}")
-def get_patient(id: int):
+def get_patient(id: int, current_user: dict = Depends(get_current_user)):
     db: Session = SessionLocal()
     patient = db.query(Patient).filter(Patient.id == id).first()
     db.close()

@@ -1,6 +1,7 @@
 from datetime import time
 from database.database import SessionLocal
 from database.models import Doctor, Patient, CheckIn
+from services.auth_service import hash_password
 
 def seed_db():
     db = SessionLocal()
@@ -16,12 +17,12 @@ def seed_db():
     dr_jenkins = Doctor(
         name="Dr. Sarah Jenkins",
         email="doctor.jenkins@recoverai.com",
-        password="password123"  # Plaintext for hackathon demo simplicity
+        password=hash_password("password123")
     )
     dr_brooks = Doctor(
         name="Dr. Brooks",
         email="doctor.brooks@recoverai.com",
-        password="password123"
+        password=hash_password("password123")
     )
     
     db.add(dr_jenkins)
@@ -34,7 +35,7 @@ def seed_db():
     vivek = Patient(
         name="Vivek Kumar",
         email="vivek@patient.com",
-        password="password123",
+        password=hash_password("password123"),
         age=28,
         condition="Post-op Knee Ligament Rehab",
         recovery_start_date="2026-05-12",
@@ -47,7 +48,7 @@ def seed_db():
     samantha = Patient(
         name="Samantha Reed",
         email="samantha@patient.com",
-        password="password123",
+        password=hash_password("password123"),
         age=42,
         condition="Spine Fusion Recovery",
         recovery_start_date="2026-04-25",
@@ -60,7 +61,7 @@ def seed_db():
     aaron = Patient(
         name="Aaron Miller",
         email="aaron@patient.com",
-        password="password123",
+        password=hash_password("password123"),
         age=65,
         condition="Hip Replacement Rehab",
         recovery_start_date="2026-05-01",
@@ -73,7 +74,7 @@ def seed_db():
     elena = Patient(
         name="Elena Rostova",
         email="elena@patient.com",
-        password="password123",
+        password=hash_password("password123"),
         age=34,
         condition="ACL Reconstruction",
         recovery_start_date="2026-05-18",

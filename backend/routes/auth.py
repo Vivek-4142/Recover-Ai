@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database.database import SessionLocal
 from database.models import Doctor, Patient
+from services.auth_service import hash_password, verify_password, create_access_token
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -35,7 +36,7 @@ def register_doctor(req: DoctorRegister):
     new_doc = Doctor(
         name=req.name,
         email=req.email,
-        password=req.password
+        password=hash_password(req.password)
     )
     db.add(new_doc)
     db.commit()
@@ -47,7 +48,6 @@ def register_doctor(req: DoctorRegister):
 def register_patient(req: PatientRegister):
     db: Session = SessionLocal()
     
-   
     doc = db.query(Doctor).filter(Doctor.id == req.doctor_id).first()
     if not doc:
         db.close()
@@ -61,7 +61,7 @@ def register_patient(req: PatientRegister):
     new_pat = Patient(
         name=req.name,
         email=req.email,
-        password=req.password,
+        password=hash_password(req.password),
         age=req.age,
         condition=req.condition,
         recovery_start_date=req.recovery_start_date,
@@ -78,16 +78,17 @@ def register_patient(req: PatientRegister):
 def login(req: LoginRequest):
     db: Session = SessionLocal()
     
-
     doc = db.query(Doctor).filter(Doctor.email == req.email).first()
     if doc:
-        if doc.password == req.password:  
+        if verify_password(req.password, doc.password):  
+            token = create_access_token(data={"sub": doc.email, "role": "doctor", "id": doc.id})
             db.close()
             return {
                 "role": "doctor",
                 "id": doc.id,
                 "name": doc.name,
-                "email": doc.email
+                "email": doc.email,
+                "access_token": token
             }
         else:
             db.close()
@@ -95,14 +96,16 @@ def login(req: LoginRequest):
 
     pat = db.query(Patient).filter(Patient.email == req.email).first()
     if pat:
-        if pat.password == req.password:
+        if verify_password(req.password, pat.password):
+            token = create_access_token(data={"sub": pat.email, "role": "patient", "id": pat.id})
             db.close()
             return {
                 "role": "patient",
                 "id": pat.id,
                 "name": pat.name,
                 "email": pat.email,
-                "doctor_id": pat.doctor_id
+                "doctor_id": pat.doctor_id,
+                "access_token": token
             }
         else:
             db.close()
